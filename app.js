@@ -2,15 +2,16 @@ const teams={
   ATL:{name:'Atlanta Hawks',short:'Atlanta',id:1},BOS:{name:'Boston Celtics',short:'Boston',id:2},BKN:{name:'Brooklyn Nets',short:'Brooklyn',id:17},CHA:{name:'Charlotte Hornets',short:'Charlotte',id:30},CHI:{name:'Chicago Bulls',short:'Chicago',id:4},CLE:{name:'Cleveland Cavaliers',short:'Cleveland',id:5},DAL:{name:'Dallas Mavericks',short:'Dallas',id:6},DEN:{name:'Denver Nuggets',short:'Denver',id:7},DET:{name:'Detroit Pistons',short:'Detroit',id:8},GSW:{name:'Golden State Warriors',short:'Golden State',id:9},HOU:{name:'Houston Rockets',short:'Houston',id:10},IND:{name:'Indiana Pacers',short:'Indiana',id:11},LAC:{name:'LA Clippers',short:'LA Clippers',id:12},LAL:{name:'Los Angeles Lakers',short:'LA Lakers',id:13},MEM:{name:'Memphis Grizzlies',short:'Memphis',id:29},MIA:{name:'Miami Heat',short:'Miami',id:14},MIL:{name:'Milwaukee Bucks',short:'Milwaukee',id:15},MIN:{name:'Minnesota Timberwolves',short:'Minnesota',id:16},NYK:{name:'New York Knicks',short:'New York',id:18},NOP:{name:'New Orleans Pelicans',short:'New Orleans',id:3},OKC:{name:'Oklahoma City Thunder',short:'Oklahoma City',id:25},ORL:{name:'Orlando Magic',short:'Orlando',id:19},PHI:{name:'Philadelphia 76ers',short:'Philadelphia',id:20},PHX:{name:'Phoenix Suns',short:'Phoenix',id:21},POR:{name:'Portland Trail Blazers',short:'Portland',id:22},SAC:{name:'Sacramento Kings',short:'Sacramento',id:23},SAS:{name:'San Antonio Spurs',short:'San Antonio',id:24},TOR:{name:'Toronto Raptors',short:'Toronto',id:28},UTA:{name:'Utah Jazz',short:'Utah',id:26},WAS:{name:'Washington Wizards',short:'Washington',id:27}
 };
 const API='https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
+const FIXED_PACE=100;
 const $=id=>document.getElementById(id);
 const profiles={away:null,home:null};
 let games=[], selectedGame=null, statCache=new Map(), refreshing=false, injuryCache={items:[],loadedAt:0};
 let pregameCache=(()=>{try{return JSON.parse(localStorage.getItem('nba-pregame-lines')||'{}')}catch(_){return{}}})();
 let pregameForecasts=(()=>{try{return JSON.parse(localStorage.getItem('nba-pregame-forecasts')||'{}')}catch(_){return{}}})();
-const controls=['awayOff','awayDef','awayForm','homeOff','homeDef','homeForm','pace','rest','homecourt','line'];
+const controls=['awayOff','awayDef','awayForm','homeOff','homeDef','homeForm','rest','homecourt','line'];
 function init(){
   for(const id of ['awayTeam','homeTeam'])$(id).innerHTML=Object.entries(teams).map(([key,t])=>`<option value="${key}">${t.name}</option>`).join('');
-  $('awayTeam').value='BOS';$('homeTeam').value='NYK';$('pace').value=99;$('paceValue').textContent='99.0';$('homecourt').checked=true;
+  $('awayTeam').value='BOS';$('homeTeam').value='NYK';$('pace').value=FIXED_PACE;$('pace').disabled=true;$('paceValue').textContent=FIXED_PACE.toFixed(1);$('homecourt').checked=true;
   const today=new Date();$('gameDate').value=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   for(const id of ['awayTeam','homeTeam'])$(id).addEventListener('change',async()=>{const side=id.startsWith('away')?'away':'home';selectedGame=null;updateGameDetail();$('liveGame').value='';$('line').value='';$('marketSource').textContent='Selección manual · ingresa la línea o elige un partido en vivo';$('liveDetail').textContent='Equipos seleccionados manualmente. Elige un partido del feed para volver a sincronizar marcador y mercado.';setTeamLabel(side);await loadTeamStats(side);renderAbsences();updateSampleMessage();calculate()});
   controls.forEach(id=>$(id).addEventListener('input',calculate));
@@ -62,7 +63,7 @@ function applyRestFromSchedule(){const a=profiles.away?.daysSince,h=profiles.hom
 function mean(arr){return arr.reduce((s,n)=>s+n,0)/arr.length}
 function num(id,fallback=0){const raw=$(id).value;if(raw===''||raw===null)return fallback;const v=Number(raw);return Number.isFinite(v)?v:fallback}
 function calculate(){const started=selectedGame&&selectedGame.status?.state!=='pre';const frozen=started?pregameForecasts[selectedGame.event.id]:null;if(frozen){restorePregameForecast(frozen);return}const inputs=['awayOff','awayDef','awayForm','homeOff','homeDef','homeForm'].map(id=>$(id).value);if(inputs.some(v=>v==='')){$('projected').textContent='—';$('interval').textContent='Esperando datos de temporada';$('overProb').textContent='—';$('underProb').textContent='—';$('lean').textContent='No hay muestra estadística disponible para este partido';return}
-  const ao=num('awayOff'),ad=num('awayDef'),af=num('awayForm'),ho=num('homeOff'),hd=num('homeDef'),hf=num('homeForm'),pace=num('pace');
+  const ao=num('awayOff'),ad=num('awayDef'),af=num('awayForm'),ho=num('homeOff'),hd=num('homeDef'),hf=num('homeForm'),pace=FIXED_PACE;
   const awayPts=((ao+hd)/2+af/2)*pace/100,homePts=((ho+ad)/2+hf/2)*pace/100;
   const injuries=injuryAdjustment($('awayTeam').value)+injuryAdjustment($('homeTeam').value);
   const rv=$('rest').value;let rest=0;if(rv==='-2'||rv==='-2h')rest=-2;if(rv==='-4')rest=-4;if(rv==='1'||rv==='1h')rest=1;
@@ -77,5 +78,5 @@ function restorePregameForecast(f){const capturedBeforeStart=f.source!=='first-o
 function normalCdf(x){const t=1/(1+0.2316419*Math.abs(x)),d=0.3989423*Math.exp(-x*x/2);const p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p}
 function injuryAdjustment(key){const group=injuryCache.items.find(x=>String(x.id)===String(teams[key]?.id));const raw=(group?.injuries||[]).reduce((sum,x)=>{const id=x.athlete?.id||x.athlete?.links?.map(a=>a.href?.match(/\/id\/(\d+)/)?.[1]).find(Boolean),status=absenceStatus(x),ppg=playerStatCache.get(id),star=Number.isFinite(ppg)&&ppg>=20;if(status.label==='Fuera'||status.label==='Sancionado')return sum-(Number.isFinite(ppg)?Math.min(ppg*(star?0.16:0.10),star?3.5:2):star?2.5:1.2);if(status.label==='En duda'||/questionable/i.test(x.status||''))return sum-(Number.isFinite(ppg)?Math.min(ppg*(star?0.08:0.05),star?1.8:1):0.8);return sum},0);return Math.max(-5,raw)}
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function resetScenario(){$('pace').value=99;$('homecourt').checked=true;applyRestFromSchedule();calculate()}
+function resetScenario(){$('pace').value=FIXED_PACE;$('homecourt').checked=true;applyRestFromSchedule();calculate()}
 init();
