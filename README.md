@@ -8,7 +8,7 @@ Prototipo web interactivo para proyectar el total de puntos de partidos NBA 2026
 - La app muestra líneas de apertura y las últimas líneas prepartido recibidas; conserva capturas en el almacenamiento local del navegador.
 - “Estrella” indica 20 o más puntos por partido en la temporada más reciente con estadísticas disponibles.
 - El ajuste por ausencias es experimental y aproximado. Confirma lesiones y sanciones en fuentes oficiales.
-- La proyección con línea mezcla 50% modelo y 50% mercado. El rango de incertidumbre aumenta con pocos partidos de la temporada; la app solo señala inclinación Over/Under desde 60/40. Las probabilidades son estimaciones experimentales, no están calibradas con suficiente historial.
+- La proyección usa más peso de la línea de mercado al inicio (75%) y baja gradualmente hasta 50% al completar 20 partidos por equipo. El rango de incertidumbre también aumenta con pocos partidos; la app solo señala inclinación Over/Under desde 60/40. Las probabilidades son estimaciones experimentales, no están calibradas con suficiente historial.
 - No es una predicción oficial ni una recomendación de apuesta.
 
 ## Uso
