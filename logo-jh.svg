@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">JH NBA</title>
+  <rect width="128" height="128" rx="28" fill="#c7f36b"/>
+  <circle cx="64" cy="46" r="31" fill="#f2bb62" stroke="#132014" stroke-width="5"/>
+  <path d="M33 46h62M64 15c-10 9-15 19-15 31s5 22 15 31m0-63c10 9 15 19 15 31s-5 22-15 31" fill="none" stroke="#132014" stroke-width="3.5"/>
+  <rect x="14" y="72" width="100" height="43" rx="12" fill="#132014"/>
+  <text x="64" y="103" fill="#c7f36b" font-family="Arial,sans-serif" font-size="32" font-weight="700" letter-spacing="1" text-anchor="middle">JH</text>
+</svg>
